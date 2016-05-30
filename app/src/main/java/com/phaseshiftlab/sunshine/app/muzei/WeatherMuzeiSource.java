@@ -20,8 +20,8 @@ import android.database.Cursor;
 import android.net.Uri;
 
 import com.phaseshiftlab.sunshine.app.MainActivity;
-import com.phaseshiftlab.sunshine.app.Utility;
-import com.phaseshiftlab.sunshine.app.data.WeatherContract;
+import com.phaseshiftlab.sunshineutilitylib.Utility;
+import com.phaseshiftlab.sunshineutilitylib.data.WeatherContract;
 import com.phaseshiftlab.sunshine.app.sync.SunshineSyncAdapter;
 import com.google.android.apps.muzei.api.Artwork;
 import com.google.android.apps.muzei.api.MuzeiArtSource;

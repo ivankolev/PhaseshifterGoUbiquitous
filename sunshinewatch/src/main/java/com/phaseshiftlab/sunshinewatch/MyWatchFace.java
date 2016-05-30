@@ -21,19 +21,31 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.res.Resources;
+import android.database.Cursor;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Rect;
+import android.graphics.RectF;
 import android.graphics.Typeface;
+import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.os.PowerManager;
+import android.support.v4.util.Pair;
 import android.support.wearable.watchface.CanvasWatchFaceService;
 import android.support.wearable.watchface.WatchFaceStyle;
 import android.text.format.Time;
+import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.WindowInsets;
+
+import com.phaseshiftlab.sunshineutilitylib.Utility;
+import com.phaseshiftlab.sunshineutilitylib.data.WeatherContract;
 
 import java.lang.ref.WeakReference;
 import java.util.TimeZone;
@@ -52,14 +64,17 @@ public class MyWatchFace extends CanvasWatchFaceService {
      * displayed in interactive mode.
      */
     private static final long INTERACTIVE_UPDATE_RATE_MS = TimeUnit.SECONDS.toMillis(1);
+    private static final long INTERACTIVE_FORECAST_UPDATE_RATE_MS = TimeUnit.HOURS.toMillis(1);
 
     /**
      * Handler message id for updating the time periodically in interactive mode.
      */
     private static final int MSG_UPDATE_TIME = 0;
+    private static final int MSG_UPDATE_FORECAST = 1;
 
     @Override
     public Engine onCreateEngine() {
+        Log.d("DEBUG", "onCreateEngine");
         return new Engine();
     }
 
@@ -78,6 +93,10 @@ public class MyWatchFace extends CanvasWatchFaceService {
                     case MSG_UPDATE_TIME:
                         engine.handleUpdateTimeMessage();
                         break;
+                    case MSG_UPDATE_FORECAST:
+                        engine.cancelUpdateForecast();
+                        engine.startUpdateForecast();
+                        break;
                 }
             }
         }
@@ -88,6 +107,7 @@ public class MyWatchFace extends CanvasWatchFaceService {
         boolean mRegisteredTimeZoneReceiver = false;
         Paint mBackgroundPaint;
         Paint mTextPaint;
+        Paint mForecastTextPaint;
         boolean mAmbient;
         Time mTime;
         final BroadcastReceiver mTimeZoneReceiver = new BroadcastReceiver() {
@@ -101,6 +121,22 @@ public class MyWatchFace extends CanvasWatchFaceService {
 
         float mXOffset;
         float mYOffset;
+
+        private Pair<String, Integer> mCurrentWeather = null;
+
+        private AsyncTask<Void, Void, Pair<String, Integer>> mUpdateForecastTask;
+
+        private void startUpdateForecast() {
+            mUpdateForecastTask = new RefreshWeatherTask();
+            mUpdateForecastTask.execute();
+        }
+
+
+        private void cancelUpdateForecast() {
+            if (mUpdateForecastTask != null) {
+                mUpdateForecastTask.cancel(true);
+            }
+        }
 
         /**
          * Whether the display supports fewer bits for each color in ambient mode. When true, we
@@ -126,6 +162,7 @@ public class MyWatchFace extends CanvasWatchFaceService {
 
             mTextPaint = new Paint();
             mTextPaint = createTextPaint(resources.getColor(R.color.digital_text));
+            mForecastTextPaint = createTextPaint(resources.getColor(R.color.digital_text));
 
             mTime = new Time();
         }
@@ -262,6 +299,44 @@ public class MyWatchFace extends CanvasWatchFaceService {
                     ? String.format("%d:%02d", mTime.hour, mTime.minute)
                     : String.format("%d:%02d:%02d", mTime.hour, mTime.minute, mTime.second);
             canvas.drawText(text, mXOffset, mYOffset, mTextPaint);
+
+            String dateText = mTime.format("EEE, MMM dd yyyy").toUpperCase();
+            Rect tempRect = new Rect();
+            mTextPaint.getTextBounds(dateText, 0, dateText.length(), tempRect);
+            float dateStartX = bounds.centerX() - (tempRect.width() / 2);
+            float dateStartY = bounds.centerY() - tempRect.height() + 10;
+            canvas.drawText(dateText, // Text to display
+                    dateStartX,
+                    dateStartY,
+                    mTextPaint
+            );
+            if (mCurrentWeather != null) {
+
+                mForecastTextPaint.setAlpha(255);
+                mForecastTextPaint.setTextSize(34);
+                mTextPaint.setAlpha(255 / 2);
+                mTextPaint.setTextSize(34);
+
+                String tempString = mCurrentWeather.first;
+                String[] highLow = tempString.split("  ");
+                String highString = highLow[0];
+                String lowString = highLow[1];
+
+
+                int weatherRes = mCurrentWeather.second;
+                Bitmap icon = BitmapFactory.decodeResource(getResources(), weatherRes);
+                RectF destRec = new RectF(bounds.centerX() - 30, dateStartY + 15,
+                        bounds.centerX() + 30, dateStartY + 75);
+
+                canvas.drawBitmap(icon, null, destRec, null);
+
+                float highLeft = destRec.left - mForecastTextPaint.measureText(highString);
+                float lowLeft = destRec.left + 70;
+
+                canvas.drawText(highString, highLeft, destRec.bottom - 15, mForecastTextPaint);
+                canvas.drawText(lowString, lowLeft, destRec.bottom - 15, mTextPaint);
+
+            }
         }
 
         /**
@@ -293,6 +368,90 @@ public class MyWatchFace extends CanvasWatchFaceService {
                 long delayMs = INTERACTIVE_UPDATE_RATE_MS
                         - (timeMs % INTERACTIVE_UPDATE_RATE_MS);
                 mUpdateTimeHandler.sendEmptyMessageDelayed(MSG_UPDATE_TIME, delayMs);
+            }
+        }
+
+        private void onForecastDataReceived(Pair<String, Integer> forecast) {
+            if (shouldTimerBeRunning()) {
+                long timeMs = System.currentTimeMillis();
+                long delayMs = INTERACTIVE_FORECAST_UPDATE_RATE_MS
+                        - (timeMs % INTERACTIVE_FORECAST_UPDATE_RATE_MS);
+                mCurrentWeather = forecast;
+                mUpdateTimeHandler.sendEmptyMessageDelayed(MSG_UPDATE_FORECAST, delayMs);
+            }
+        }
+
+        private class RefreshWeatherTask extends AsyncTask<Void, Void, Pair<String, Integer>> {
+            private final String[] FORECAST_COLUMNS = {
+                    WeatherContract.WeatherEntry.COLUMN_WEATHER_ID,
+                    WeatherContract.WeatherEntry.COLUMN_SHORT_DESC,
+                    WeatherContract.WeatherEntry.COLUMN_MAX_TEMP,
+                    WeatherContract.WeatherEntry.COLUMN_MIN_TEMP
+            };
+
+            // these indices must match the projection
+            private static final int INDEX_WEATHER_ID = 0;
+
+            private static final int INDEX_SHORT_DESC = 1;
+
+            private static final int INDEX_MAX_TEMP = 2;
+
+            private static final int INDEX_MIN_TEMP = 3;
+
+            private PowerManager.WakeLock mWakeLock;
+
+            @Override
+            protected Pair<String, Integer> doInBackground(Void... voids) {
+                PowerManager powerManager = (PowerManager) getSystemService(POWER_SERVICE);
+                mWakeLock = powerManager.newWakeLock(
+                        PowerManager.PARTIAL_WAKE_LOCK, "CalendarWatchFaceWakeLock");
+                mWakeLock.acquire();
+
+                // Get today's data from the ContentProvider
+                String location = Utility.getPreferredLocation(getApplicationContext());
+                Uri weatherForLocationUri = WeatherContract.WeatherEntry
+                        .buildWeatherLocationWithStartDate(
+                                location, System.currentTimeMillis());
+                Cursor data = getContentResolver()
+                        .query(weatherForLocationUri, FORECAST_COLUMNS, null,
+                                null, WeatherContract.WeatherEntry.COLUMN_DATE + " ASC");
+                if (data == null) {
+                    return null;
+                }
+                if (!data.moveToFirst()) {
+                    data.close();
+                    return null;
+                }
+
+                int weatherId = data.getInt(INDEX_WEATHER_ID);
+                int weatherArtResourceId = Utility.getIconResourceForWeatherCondition(weatherId);
+                double maxTemp = data.getDouble(INDEX_MAX_TEMP);
+                double minTemp = data.getDouble(INDEX_MIN_TEMP);
+                String formattedMaxTemperature = Utility
+                        .formatTemperature(getApplicationContext(), maxTemp);
+                String formattedMinTemperature = Utility
+                        .formatTemperature(getApplicationContext(), minTemp);
+                data.close();
+                String combinedHighLow = formattedMaxTemperature + " " + formattedMinTemperature;
+                return new Pair<>(combinedHighLow, weatherArtResourceId);
+            }
+
+            @Override
+            protected void onPostExecute(Pair<String, Integer> result) {
+                releaseWakeLock();
+                onForecastDataReceived(result);
+            }
+
+            @Override
+            protected void onCancelled() {
+                releaseWakeLock();
+            }
+
+            private void releaseWakeLock() {
+                if (mWakeLock != null) {
+                    mWakeLock.release();
+                    mWakeLock = null;
+                }
             }
         }
     }

@@ -31,8 +31,8 @@ import android.widget.RemoteViews;
 
 import com.phaseshiftlab.sunshine.app.MainActivity;
 import com.phaseshiftlab.sunshine.app.R;
-import com.phaseshiftlab.sunshine.app.Utility;
-import com.phaseshiftlab.sunshine.app.data.WeatherContract;
+import com.phaseshiftlab.sunshineutilitylib.Utility;
+import com.phaseshiftlab.sunshineutilitylib.data.WeatherContract;
 
 /**
  * IntentService which handles updating all Today widgets with the latest data

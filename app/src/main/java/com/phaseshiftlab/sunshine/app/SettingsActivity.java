@@ -25,8 +25,9 @@ import android.preference.Preference;
 import android.preference.PreferenceActivity;
 import android.preference.PreferenceManager;
 
-import com.phaseshiftlab.sunshine.app.data.WeatherContract;
+import com.phaseshiftlab.sunshineutilitylib.data.WeatherContract;
 import com.phaseshiftlab.sunshine.app.sync.SunshineSyncAdapter;
+import com.phaseshiftlab.sunshineutilitylib.Utility;
 
 /**
  * A {@link PreferenceActivity} that presents a set of application settings.

@@ -30,7 +30,8 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 
-import com.phaseshiftlab.sunshine.app.data.WeatherContract;
+import com.phaseshiftlab.sunshineutilitylib.Utility;
+import com.phaseshiftlab.sunshineutilitylib.data.WeatherContract;
 import com.phaseshiftlab.sunshine.app.gcm.RegistrationIntentService;
 import com.phaseshiftlab.sunshine.app.sync.SunshineSyncAdapter;
 import com.google.android.gms.common.ConnectionResult;

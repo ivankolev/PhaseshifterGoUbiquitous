@@ -15,8 +15,8 @@ import android.widget.RemoteViewsService;
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.target.Target;
 import com.phaseshiftlab.sunshine.app.R;
-import com.phaseshiftlab.sunshine.app.Utility;
-import com.phaseshiftlab.sunshine.app.data.WeatherContract;
+import com.phaseshiftlab.sunshineutilitylib.Utility;
+import com.phaseshiftlab.sunshineutilitylib.data.WeatherContract;
 
 import java.util.concurrent.ExecutionException;
 

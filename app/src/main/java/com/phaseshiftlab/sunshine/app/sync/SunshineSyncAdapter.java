@@ -3,7 +3,6 @@ package com.phaseshiftlab.sunshine.app.sync;
 import android.accounts.Account;
 import android.accounts.AccountManager;
 import android.annotation.SuppressLint;
-import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.AbstractThreadedSyncAdapter;
 import android.content.ContentProviderClient;
@@ -25,6 +24,7 @@ import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.support.annotation.IntDef;
 import android.support.v4.app.NotificationCompat;
+import android.support.v4.app.NotificationManagerCompat;
 import android.support.v4.app.TaskStackBuilder;
 import android.text.format.Time;
 import android.util.Log;
@@ -33,9 +33,9 @@ import com.bumptech.glide.Glide;
 import com.phaseshiftlab.sunshine.app.BuildConfig;
 import com.phaseshiftlab.sunshine.app.MainActivity;
 import com.phaseshiftlab.sunshine.app.R;
-import com.phaseshiftlab.sunshine.app.Utility;
-import com.phaseshiftlab.sunshine.app.data.WeatherContract;
+import com.phaseshiftlab.sunshineutilitylib.data.WeatherContract;
 import com.phaseshiftlab.sunshine.app.muzei.WeatherMuzeiSource;
+import com.phaseshiftlab.sunshineutilitylib.Utility;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -490,8 +490,8 @@ public class SunshineSyncAdapter extends AbstractThreadedSyncAdapter {
                             );
                     mBuilder.setContentIntent(resultPendingIntent);
 
-                    NotificationManager mNotificationManager =
-                            (NotificationManager) getContext().getSystemService(Context.NOTIFICATION_SERVICE);
+                    NotificationManagerCompat mNotificationManager =
+                            NotificationManagerCompat.from(getContext());// getContext().getSystemService(Context.NOTIFICATION_SERVICE);
                     // WEATHER_NOTIFICATION_ID allows you to update the notification later on.
                     mNotificationManager.notify(WEATHER_NOTIFICATION_ID, mBuilder.build());
 
