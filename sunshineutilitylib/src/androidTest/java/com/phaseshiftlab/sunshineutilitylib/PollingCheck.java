@@ -15,7 +15,7 @@
  *
  * Note: This file copied from the Android CTS Tests
  */
-package com.phaseshiftlab.sunshine.app.utils;
+package com.phaseshiftlab.sunshineutilitylib;
 
 import junit.framework.Assert;
 

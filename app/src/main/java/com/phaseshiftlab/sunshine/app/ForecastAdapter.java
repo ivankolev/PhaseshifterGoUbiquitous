@@ -28,6 +28,7 @@ import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
 import com.phaseshiftlab.sunshineutilitylib.Utility;
+import com.phaseshiftlab.sunshineutilitylib.data.WeatherConstantsDefinitions;
 import com.phaseshiftlab.sunshineutilitylib.data.WeatherContract;
 
 /**
@@ -123,7 +124,7 @@ public class ForecastAdapter extends RecyclerView.Adapter<ForecastAdapter.Foreca
     @Override
     public void onBindViewHolder(ForecastAdapterViewHolder forecastAdapterViewHolder, int position) {
         mCursor.moveToPosition(position);
-        int weatherId = mCursor.getInt(ForecastFragment.COL_WEATHER_CONDITION_ID);
+        int weatherId = mCursor.getInt(WeatherConstantsDefinitions.COL_WEATHER_CONDITION_ID);
         int defaultImage;
         boolean useLongToday;
 
@@ -152,7 +153,7 @@ public class ForecastAdapter extends RecyclerView.Adapter<ForecastAdapter.Foreca
         ViewCompat.setTransitionName(forecastAdapterViewHolder.mIconView, "iconView" + position);
 
         // Read date from cursor
-        long dateInMillis = mCursor.getLong(ForecastFragment.COL_WEATHER_DATE);
+        long dateInMillis = mCursor.getLong(WeatherConstantsDefinitions.COL_WEATHER_DATE);
 
         // Find TextView and set formatted date on it
         forecastAdapterViewHolder.mDateView.setText(Utility.getFriendlyDayString(mContext, dateInMillis, useLongToday));
@@ -169,13 +170,13 @@ public class ForecastAdapter extends RecyclerView.Adapter<ForecastAdapter.Foreca
         // is not individually selectable
 
         // Read high temperature from cursor
-        double high = mCursor.getDouble(ForecastFragment.COL_WEATHER_MAX_TEMP);
+        double high = mCursor.getDouble(WeatherConstantsDefinitions.COL_WEATHER_MAX_TEMP);
         String highString = Utility.formatTemperature(mContext, high);
         forecastAdapterViewHolder.mHighTempView.setText(highString);
         forecastAdapterViewHolder.mHighTempView.setContentDescription(mContext.getString(R.string.a11y_high_temp, highString));
 
         // Read low temperature from cursor
-        double low = mCursor.getDouble(ForecastFragment.COL_WEATHER_MIN_TEMP);
+        double low = mCursor.getDouble(WeatherConstantsDefinitions.COL_WEATHER_MIN_TEMP);
         String lowString = Utility.formatTemperature(mContext, low);
         forecastAdapterViewHolder.mLowTempView.setText(lowString);
         forecastAdapterViewHolder.mLowTempView.setContentDescription(mContext.getString(R.string.a11y_low_temp, lowString));

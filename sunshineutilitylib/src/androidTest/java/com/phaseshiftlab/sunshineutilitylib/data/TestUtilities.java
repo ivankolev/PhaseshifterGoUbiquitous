@@ -25,7 +25,8 @@ import android.os.Handler;
 import android.os.HandlerThread;
 import android.test.AndroidTestCase;
 
-import com.phaseshiftlab.sunshine.app.utils.PollingCheck;
+
+import com.phaseshiftlab.sunshineutilitylib.PollingCheck;
 
 import java.util.Map;
 import java.util.Set;
